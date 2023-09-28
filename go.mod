@@ -18,7 +18,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.1.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
-	github.com/virtru/access-pdp v1.7.0
+	github.com/virtru/access-pdp v1.5.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/oauth2 v0.12.0
 )

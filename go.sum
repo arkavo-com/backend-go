@@ -256,6 +256,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/subosito/gotenv v1.4.2 h1:X1TuBLAMDFbaTAChgCBLu3DU3UPyELpnF2jjJ2cz/S8=
 github.com/subosito/gotenv v1.4.2/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
+github.com/virtru/access-pdp v1.5.0 h1:zmBzhUmPpRxXCendWAHHkNbMg9sEqSgDg9Zb9Aje/KI=
+github.com/virtru/access-pdp v1.5.0/go.mod h1:yom2m7t5x3+Y+n3dgTvN+fipDocmCg2cXdjjZfXE294=
 github.com/virtru/access-pdp v1.7.0 h1:ItJaKJX0rb+Df5585+sRgglSUsvC5yGUAII11NYfXj8=
 github.com/virtru/access-pdp v1.7.0/go.mod h1:Jr3cnt8gBRb0mDZ8mYDiXK68XBiKr2n9GPciV9GZfZc=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
