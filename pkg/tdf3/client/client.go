@@ -3,7 +3,6 @@ package client
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"encoding/base64"
@@ -93,7 +92,7 @@ func clientDefaults(client *Client) {
 
 }
 
-func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]byte, error) {
+func (client *Client) Create(plainText io.Reader, writer io.Writer, options *TDFCreateOptions) error {
 	var (
 		tdf tdf3.TDF
 	)
@@ -108,13 +107,11 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 		KeySplitType:    "split",
 		HashAlgorithm:   crypto.SHA256,
 	}
-	fmt.Println(options)
-	fmt.Println(defaultOptions)
 
 	// Override default options with user options
 	err := mergo.Merge(defaultOptions, options, mergo.WithOverride)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	options = defaultOptions
 	fmt.Println(defaultOptions)
@@ -122,7 +119,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 	// Create new crypto provider
 	cryptoProvider, err := tdfCrypto.NewCryptoClient(options.CryptoAlgorithm)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	/*
@@ -145,8 +142,8 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 	// I don't think IV is needed or used
 	tdf.EncryptionInformation.Method.IV = []byte("")
 
-	zipBuf := new(bytes.Buffer)
-	tdfZip := zip.NewWriter(zipBuf)
+	// zipBuf := new(bytes.Buffer)
+	tdfZip := zip.NewWriter(writer)
 
 	buf := make([]byte, options.SegmentSize)
 	var segments []tdf3.Segment
@@ -160,7 +157,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 
 	chunkWriter, err := tdfZip.CreateHeader(payload)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Wrap io.Reader in bufio.Reader
@@ -169,7 +166,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 	for {
 		n, err := bufReader.Read(buf)
 		if err != nil && err != io.EOF {
-			return nil, err
+			return err
 		}
 		// Detect mime type from first chunk
 		if chunkCount == 0 {
@@ -182,7 +179,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 		// Encrypt segment
 		cipherText, err := cryptoProvider.Encrypt(buf[:n])
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		// Build new segment
@@ -208,7 +205,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 
 	err = tdf.EncryptionInformation.IntegrityInformation.BuildRootSignature(cryptoProvider.Key())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	//TODO: Build Policy Object
@@ -220,27 +217,27 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 
 	jsonPolicy, err := json.Marshal(policy)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	tdf.EncryptionInformation.Policy = jsonPolicy
 	b64Policy := base64.StdEncoding.EncodeToString(jsonPolicy)
 	keySplits, err := tdfCrypto.KeySplit(options.KeySplitType, cryptoProvider.Key(), len(client.kas))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	//Key Access Object Creation
-	for i, kas := range client.kas {
+	// Key Access Object Creation
+	for i, kao := range client.kas {
 		var encryptedMetatDataCipherText []byte
 
 		keyAccess := &tdf3.KeyAccess{}
 		keyAccess.Type = "wrapped"
-		keyAccess.URL = kas.Endpoint.String()
-		keyAccess.Protocol = "kas"
+		keyAccess.URL = kao.Endpoint.String()
+		keyAccess.Protocol = "kao"
 
-		keyAccess.WrappedKey, err = kas.LocalRewrap(keySplits[i])
+		keyAccess.WrappedKey, err = kao.LocalRewrap(keySplits[i])
 		if err != nil {
-			return nil, err
+			return err
 		}
 		keyAccess.PolicyBinding = tdfCrypto.Sign(options.HashAlgorithm, []byte(b64Policy), keySplits[i])
 
@@ -250,7 +247,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 			// Generate nonce or what some people call the iv
 			metaDataCryptoProvider, err := tdfCrypto.NewCryptoClientWithKey(options.CryptoAlgorithm, keySplits[i])
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			metadata.Algorithm = metaDataCryptoProvider.Algorithm()
@@ -258,7 +255,7 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 			// Encrypt segment
 			metadata.CipherText, err = metaDataCryptoProvider.Encrypt(options.EncryptedMetadata)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			// We shouldn't store IV like this
@@ -266,13 +263,12 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 
 			encryptedMetatDataCipherText, err = json.Marshal(metadata)
 			if err != nil {
-				return nil, err
+				return err
 			}
 		}
 
 		keyAccess.EncryptedMetadata = encryptedMetatDataCipherText
 		tdf.EncryptionInformation.KeyAccess = append(tdf.EncryptionInformation.KeyAccess, *keyAccess)
-
 	}
 
 	// We only split type for now. Not sure what it actually means
@@ -284,40 +280,33 @@ func (client *Client) Create(plainText io.Reader, options *TDFCreateOptions) ([]
 	}
 	manifestWriter, err := tdfZip.CreateHeader(manifestHeader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	tdfb, err := json.Marshal(tdf)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	manifestWriter.Write(tdfb)
-
-	err = tdfZip.Close()
-	if err != nil {
-		return nil, err
-	}
-	return zipBuf.Bytes(), nil
-}
-
-// We should probably accept an IO Writer Interface here as well
-func (client *Client) GetContent(file io.Reader, writer io.Writer) error {
-	//Can we set the size of the buffer to the segment size?
-	buff := bytes.NewBuffer([]byte{})
-
-	// Is this the best way to get the size of the file?
-	size, err := io.Copy(buff, file)
+	_, err = manifestWriter.Write(tdfb)
 	if err != nil {
 		return err
 	}
 
-	reader := bytes.NewReader(buff.Bytes())
+	err = tdfZip.Close()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// We should probably accept an IO Writer Interface here as well
+func (client *Client) GetContent(reader io.ReaderAt, size int64, writer io.Writer) error {
 	tdfZip, err := zip.NewReader(reader, size)
 	if err != nil {
 		return err
 	}
 
 	// We need to work with the manifest from the zip archive
-	tdf, err := client.GetManifest(buff)
+	tdf, err := client.GetManifest(reader, size)
 	if err != nil {
 		return err
 	}
@@ -409,16 +398,8 @@ func (client *Client) GetContent(file io.Reader, writer io.Writer) error {
 	return nil
 }
 
-func (client *Client) GetManifest(file io.Reader) (tdf3.TDF, error) {
+func (client *Client) GetManifest(reader io.ReaderAt, size int64) (tdf3.TDF, error) {
 	var tdf tdf3.TDF
-
-	buff := bytes.NewBuffer([]byte{})
-	size, err := io.Copy(buff, file)
-	if err != nil {
-		return tdf, err
-	}
-
-	reader := bytes.NewReader(buff.Bytes())
 	tdfZip, err := zip.NewReader(reader, size)
 	if err != nil {
 		return tdf, err
@@ -454,10 +435,10 @@ func (client *Client) GetManifest(file io.Reader) (tdf3.TDF, error) {
 }
 
 // this is a hack for hackathon
-func (client *Client) GetEncryptedMetaData(file io.Reader) ([]byte, error) {
+func (client *Client) GetEncryptedMetaData(reader io.ReaderAt, size int64) ([]byte, error) {
 
 	// We need to work with the manifest from the zip archive
-	tdf, err := client.GetManifest(file)
+	tdf, err := client.GetManifest(reader, size)
 	if err != nil {
 		return nil, err
 	}

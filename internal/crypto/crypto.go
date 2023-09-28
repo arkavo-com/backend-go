@@ -29,8 +29,10 @@ func (alg CryptoAlgorithm) String() string {
 }
 
 func GetCryptoAlgorithm(name string) (CryptoAlgorithm, error) {
-	switch name {
+	switch strings.ToLower(name) {
 	case "aes-128-gcm":
+		return AES128GCM, nil
+	case "AES-256-GCM":
 		return AES128GCM, nil
 	case "aes-192-gcm":
 		return AES192GCM, nil

@@ -31,7 +31,7 @@ func init() {
 
 }
 
-func metadata(cmd *cobra.Command, args []string) {
+func metadata(cmd *cobra.Command, _ []string) {
 	var (
 		opentdfCredentials OpenTDFCredentials
 		oauth2Client       *http.Client
@@ -92,7 +92,11 @@ func metadata(cmd *cobra.Command, args []string) {
 	}
 
 	start := time.Now()
-	metadata, err := client.GetEncryptedMetaData(tdf)
+	size, err := tdf.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	metadata, err := client.GetEncryptedMetaData(tdf, size.Size())
 	if err != nil {
 		log.Fatal(err)
 	}

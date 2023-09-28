@@ -36,7 +36,7 @@ func init() {
 	manifestCmd.Flags().String("file", "", "TDF file to extract policy from")
 }
 
-func manifest(cmd *cobra.Command, args []string) {
+func manifest(cmd *cobra.Command, _ []string) {
 	file, err := cmd.Flags().GetString("file")
 	if err != nil {
 		log.Fatal(err)
@@ -52,7 +52,11 @@ func manifest(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 	start := time.Now()
-	manifest, err := client.GetManifest(tdf)
+	size, err := tdf.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	manifest, err := client.GetManifest(tdf, size.Size())
 	if err != nil {
 		log.Fatal(err)
 	}
