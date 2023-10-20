@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"io"
 	"log"
@@ -24,6 +25,11 @@ import (
 	"github.com/opentdf/backend-go/pkg/tdf3"
 	"github.com/opentdf/backend-go/pkg/wellknown"
 	"golang.org/x/oauth2/clientcredentials"
+)
+
+var (
+	ErrArchiveReader       = Error("archive reader error")
+	ErrArchiveReaderWriter = Error("archive reader writer error")
 )
 
 func main() {
@@ -247,8 +253,14 @@ func addFileToZip(zipWriter *zip.Writer, filename string, contents []byte) error
 	}
 	writer, err := zipWriter.CreateHeader(&header)
 	if err != nil {
-		return err
+		return errors.Join(ErrArchiveReader, err)
 	}
 	_, err = io.Copy(writer, bytes.NewReader(contents))
-	return err
+	return errors.Join(ErrArchiveReaderWriter, err)
+}
+
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
 }
