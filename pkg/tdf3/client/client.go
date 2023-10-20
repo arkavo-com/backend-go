@@ -509,3 +509,9 @@ func (client *Client) GetEncryptedMetaData(reader io.ReaderAt, size int64) ([]by
 
 	return nil, errors.New("no encrypted metadata found")
 }
+
+type Error string
+
+func (e Error) Error() string {
+	return string(e)
+}

@@ -2,11 +2,18 @@ package tdf3
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
+)
+
+var (
+	ErrAttributeUnmarshal = Error("attribute unmarshal error")
+	ErrAttributeMarshal   = Error("attribute marshal error")
+	ErrAttributeParse     = Error("attribute parse error")
 )
 
 type Policy struct {
@@ -20,9 +27,9 @@ type Body struct {
 }
 
 type Attribute struct {
-	Authority string
-	Name      string
-	Value     string
+	Authority string `json:"authority"`
+	Name      string `json:"name"`
+	Value     string `json:"value"`
 }
 
 type serializedAttr struct {
@@ -32,19 +39,19 @@ type serializedAttr struct {
 func (at *Attribute) UnmarshalJSON(data []byte) error {
 	var serAt serializedAttr
 	if err := json.Unmarshal(data, &serAt); err != nil {
-		return err
+		return errors.Join(ErrAttributeUnmarshal, err)
 	}
 
 	return at.ParseAttributeFromString(serAt.Attribute)
 }
 
-func (at Attribute) MarshalJSON() ([]byte, error) {
+func (at *Attribute) MarshalJSON() ([]byte, error) {
 	var serialization = serializedAttr{
 		Attribute: fmt.Sprintf("%s/attr/%s/value/%s", at.Authority, url.PathEscape(at.Name), url.PathEscape(at.Value)),
 	}
 
 	if bytes, err := json.Marshal(serialization); err != nil {
-		return nil, err
+		return nil, errors.Join(ErrAttributeMarshal, err)
 	} else {
 		return bytes, nil
 	}
@@ -60,7 +67,7 @@ func (at *Attribute) ParseAttributeFromString(attr string) error {
 	attrVal := attr[valStart+1:]
 	attrVal, err := url.PathUnescape(attrVal)
 	if err != nil {
-		return err
+		return errors.Join(ErrAttributeParse, err)
 	}
 
 	idx := strings.LastIndex(attr[:valStart], "/")
@@ -76,7 +83,7 @@ func (at *Attribute) ParseAttributeFromString(attr string) error {
 	attrName := attr[nameStart+1 : idx]
 	attrName, err = url.PathUnescape(attrName)
 	if err != nil {
-		return err
+		return errors.Join(ErrAttributeParse, err)
 	}
 	idx = strings.LastIndex(attr[:nameStart], "/")
 	if idx == -1 {

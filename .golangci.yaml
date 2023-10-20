@@ -9,6 +9,7 @@ run:
     - _test.go
     - nanotdf.go
     - p11.go
+    - client.go
 
 # This file contains only configs which differ from defaults.
 # All possible options can be found here https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
@@ -58,6 +59,7 @@ linters-settings:
       - "^crypto/rsa.PublicKey"
       - "^crypto/ecdsa.PublicKey"
       - "^encoding/pem.Block"
+      - "^zip/FileHeader"
       # public libs
       - "^github.com/Shopify/sarama.Config$"
       - "^github.com/Shopify/sarama.ProducerMessage$"
