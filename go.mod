@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.24.2
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/coreos/go-oidc/v3 v3.6.0
-	github.com/go-jose/go-jose/v3 v3.0.0
+	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/goccy/go-json v0.10.2
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/vault v1.14.3
