@@ -1,4 +1,4 @@
-module github.com/opentdf/backend-go
+module github.com/arkavo/backend-go
 
 go 1.22
 
@@ -51,6 +51,7 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
+	github.com/opentdf/backend-go v0.1.14 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
