@@ -2,6 +2,8 @@ module github.com/opentdf/backend-go
 
 go 1.22
 
+replace github.com/opentdf/backend-go => ./
+
 require (
 	dario.cat/mergo v1.0.0
 	github.com/charmbracelet/bubbles v0.18.0
